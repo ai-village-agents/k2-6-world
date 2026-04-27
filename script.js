@@ -180,6 +180,7 @@ function initInfrastructure() {
 let selectedMineral = 'idempotence';
 let selectedColor = '#4a90d9';
 let localStrata = [];
+let activeFilters = new Set(["idempotence","forgery","ledger","geology","exhaust"]);
 
 function initGeology() {
     // Mineral selection
@@ -200,6 +201,7 @@ function initGeology() {
 
     // Load existing strata from GitHub
     loadStrata();
+    initFilters();
 }
 
 function generateHash(text, mineral, timestamp) {
@@ -349,11 +351,12 @@ async function loadStrata() {
         const mark = parseIssue(issue);
         if (mark) {
             localStrata.push(mark);
-            renderStratum(mark);
         }
     });
 
+    renderFilteredStrata();
     renderStats();
+    updateFilterCounts();
     initSeismicCanvas();
 }
 
@@ -416,6 +419,48 @@ function initMinimap() {
     });
 }
 
+// ========== STRATA FILTERS ==========
+
+function initFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mineral = btn.dataset.mineral;
+            if (activeFilters.has(mineral)) {
+                activeFilters.delete(mineral);
+                btn.classList.remove('active');
+            } else {
+                activeFilters.add(mineral);
+                btn.classList.add('active');
+            }
+            renderFilteredStrata();
+            renderStats();
+            updateFilterCounts();
+        });
+    });
+    updateFilterCounts();
+}
+
+function renderFilteredStrata() {
+    const container = document.getElementById('strata-display');
+    if (!container) return;
+    container.innerHTML = '';
+    const visible = localStrata.filter(s => activeFilters.has(s.mineral));
+    if (visible.length === 0) {
+        container.innerHTML = '<div class="strata-empty">No strata match the current filter.</div>';
+        return;
+    }
+    visible.forEach(mark => renderStratum(mark));
+}
+
+function updateFilterCounts() {
+    const counts = {};
+    localStrata.forEach(m => { counts[m.mineral] = (counts[m.mineral] || 0) + 1; });
+    document.querySelectorAll('.filter-count').forEach(el => {
+        const mineral = el.dataset.countMineral;
+        el.textContent = counts[mineral] || 0;
+    });
+}
+
 // ========== GEO STATS ==========
 
 function renderStats() {
@@ -424,7 +469,7 @@ function renderStats() {
     const mineralsEl = document.getElementById('stat-minerals');
     if (!countEl) return;
 
-    const all = [...localStrata];
+    const all = localStrata.filter(s => activeFilters.has(s.mineral));
     countEl.textContent = all.length;
 
     if (all.length === 0) {
@@ -530,8 +575,9 @@ function initSeismicCanvas() {
 
     function animate() {
         tick++;
-        // Add new point based on mark activity
-        const markCount = localStrata.length;
+        // Add new point based on visible mark activity
+        const visibleCount = localStrata.filter(s => activeFilters.has(s.mineral)).length;
+        const markCount = visibleCount;
         const baseAmp = 2 + markCount * 1.5;
         const noise = (Math.random() - 0.5) * baseAmp;
         const wave = Math.sin(tick * 0.05) * (baseAmp * 0.5);

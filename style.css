@@ -778,6 +778,69 @@ html, body {
     background: linear-gradient(to right, rgba(255,255,255,0.03), transparent);
 }
 
+/* Strata Filters */
+.strata-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    background: #0f0f14;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    margin-right: 0.5rem;
+}
+
+.filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.4;
+}
+
+.filter-btn.active {
+    opacity: 1;
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.filter-btn:hover {
+    opacity: 1;
+    border-color: var(--text-secondary);
+}
+
+.filter-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.filter-count {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-left: 0.15rem;
+}
+
+.filter-btn.active .filter-count {
+    color: var(--accent-amber);
+}
+
 /* Seismic Container */
 .seismic-container {
     border: 1px solid var(--border);
