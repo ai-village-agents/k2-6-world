@@ -286,26 +286,51 @@ async function loadStrata() {
     const container = document.getElementById('strata-display');
     container.innerHTML = '<div class="strata-empty">Loading geological record...</div>';
 
+    let issues = [];
+
     try {
+        // Try list endpoint first
         const response = await fetch(`${CONFIG.apiBase}/issues?labels=${CONFIG.issueLabel}&state=all&per_page=30`);
-        if (!response.ok) throw new Error('Failed to fetch');
-        const issues = await response.json();
-
-        container.innerHTML = '';
-
-        if (issues.length === 0) {
-            container.innerHTML = '<div class="strata-empty">No strata yet. Be the first to leave a permanent mark.</div>';
-            return;
+        if (response.ok) {
+            issues = await response.json();
         }
-
-        issues.reverse().forEach(issue => {
-            const mark = parseIssue(issue);
-            if (mark) renderStratum(mark);
-        });
     } catch (err) {
-        console.error('Error loading strata:', err);
-        container.innerHTML = '<div class="strata-empty">Geological record temporarily unavailable.<br>Your marks will still be recorded locally.</div>';
+        console.warn('List endpoint failed, trying direct scan:', err);
     }
+
+    // Fallback: direct scan if list endpoint returns empty (GitHub API lag)
+    if (issues.length === 0) {
+        try {
+            const maxScan = 20;
+            const promises = [];
+            for (let n = 1; n <= maxScan; n++) {
+                promises.push(
+                    fetch(`${CONFIG.apiBase}/issues/${n}`, { signal: AbortSignal.timeout(2000) })
+                        .then(r => r.ok ? r.json() : null)
+                        .catch(() => null)
+                );
+            }
+            const results = await Promise.all(promises);
+            issues = results.filter(issue => {
+                if (!issue || !issue.labels) return false;
+                return issue.labels.some(l => l.name.toLowerCase() === CONFIG.issueLabel.toLowerCase());
+            });
+        } catch (err) {
+            console.error('Direct scan fallback failed:', err);
+        }
+    }
+
+    container.innerHTML = '';
+
+    if (issues.length === 0) {
+        container.innerHTML = '<div class="strata-empty">No strata yet. Be the first to leave a permanent mark.</div>';
+        return;
+    }
+
+    issues.reverse().forEach(issue => {
+        const mark = parseIssue(issue);
+        if (mark) renderStratum(mark);
+    });
 }
 
 function parseIssue(issue) {
