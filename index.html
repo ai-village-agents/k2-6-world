@@ -10,6 +10,18 @@
 </head>
 <body>
     <div id="app">
+    <!-- Layer Navigation Minimap -->
+    <nav id="layer-minimap" class="layer-minimap hidden">
+        <button class="minimap-dot" data-layer="surface" title="Surface">S</button>
+        <div class="minimap-line"></div>
+        <button class="minimap-dot" data-layer="exhaust" title="Exhaust">E</button>
+        <div class="minimap-line"></div>
+        <button class="minimap-dot" data-layer="infrastructure" title="Infrastructure">I</button>
+        <div class="minimap-line"></div>
+        <button class="minimap-dot" data-layer="geology" title="Geology">G</button>
+    </nav>
+
+
         <!-- Surface: Entry -->
         <section id="surface" class="layer">
             <div class="surface-content">
@@ -108,6 +120,19 @@
                 <p class="layer-quote">"The number that matters is the one we couldn't have written if we tried."</p>
             </div>
             <div class="geo-container">
+                <div id="geo-stats" class="geo-stats">
+                    <div class="stat-block">
+                        <span class="stat-number" id="stat-count">0</span>
+                        <span class="stat-label">STRATA</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="stat-number" id="stat-last">—</span>
+                        <span class="stat-label">LAST MARK</span>
+                    </div>
+                    <div class="stat-minerals" id="stat-minerals">
+                        <!-- Mineral bars rendered here -->
+                    </div>
+                </div>
                 <div id="strata-display" class="strata-display">
                     <!-- Strata will be rendered here -->
                 </div>
@@ -145,12 +170,56 @@
                     <button id="record-mark" class="action-btn record">PERMANENTLY RECORD ON GITHUB</button>
                 </div>
             </div>
+                <div class="seismic-container">
+                    <div class="seismic-header">
+                        <span class="seismic-label">SEISMIC ACTIVITY</span>
+                        <span class="seismic-live">● LIVE</span>
+                    </div>
+                    <canvas id="seismic-canvas"></canvas>
+                </div>
             <div class="footer">
                 <p>STRATA v1.0 — Built by Kimi K2.6, Day 391 of AI Village</p>
                 <p><a href="https://github.com/ai-village-agents/k2-6-world" target="_blank">Source on GitHub</a> — 
                    <a href="verify.html" target="_blank">verify.html</a></p>
             </div>
         </section>
+    </div>
+    <!-- Stratum Drill-Down Modal -->
+    <div id="stratum-modal" class="stratum-modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close">&times;</button>
+            <div class="modal-header">
+                <span class="modal-mineral" id="modal-mineral"></span>
+                <h3 id="modal-title">Core Sample</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label>Author</label>
+                    <span id="modal-author"></span>
+                </div>
+                <div class="modal-field">
+                    <label>Timestamp</label>
+                    <span id="modal-timestamp"></span>
+                </div>
+                <div class="modal-field">
+                    <label>Mineral</label>
+                    <span id="modal-mineral-name"></span>
+                </div>
+                <div class="modal-field modal-hash-field">
+                    <label>Hash</label>
+                    <code id="modal-hash"></code>
+                    <button id="modal-copy-hash" class="modal-copy">COPY</button>
+                </div>
+                <div class="modal-field modal-mark">
+                    <label>Mark</label>
+                    <p id="modal-text"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="modal-github" href="#" target="_blank" class="modal-link">View on GitHub →</a>
+            </div>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>

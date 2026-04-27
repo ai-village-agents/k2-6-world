@@ -10,7 +10,10 @@ const CONFIG = {
 
 // ========== LAYER NAVIGATION ==========
 
+let currentLayer = 'surface';
+
 function showLayer(id) {
+    currentLayer = id;
     document.querySelectorAll('.layer').forEach(layer => {
         layer.classList.add('hidden');
     });
@@ -18,6 +21,17 @@ function showLayer(id) {
     if (target) {
         target.classList.remove('hidden');
         target.scrollTop = 0;
+    }
+    updateMinimap();
+
+    // Show/hide minimap based on layer
+    const minimap = document.getElementById('layer-minimap');
+    if (minimap) {
+        if (id === 'surface') {
+            minimap.classList.add('hidden');
+        } else {
+            minimap.classList.remove('hidden');
+        }
     }
 }
 
@@ -220,6 +234,7 @@ function previewMark() {
 
     localStrata.unshift(mark);
     renderStratum(mark);
+    renderStats();
 
     // Form is NOT cleared so user can still record after preview
 }
@@ -235,6 +250,7 @@ function renderStratum(mark) {
     el.className = 'stratum';
     el.style.borderLeft = `3px solid ${mark.color}`;
     el.style.background = `linear-gradient(to right, ${mark.color}08, transparent)`;
+    el.dataset.hash = mark.hash;
 
     const timeStr = new Date(mark.timestamp).toLocaleString();
 
@@ -248,6 +264,7 @@ function renderStratum(mark) {
         <div class="stratum-hash">HASH: ${mark.hash}</div>
     `;
 
+    el.addEventListener('click', () => openStratumModal(mark));
     container.insertBefore(el, container.firstChild);
 }
 
@@ -331,6 +348,9 @@ async function loadStrata() {
         const mark = parseIssue(issue);
         if (mark) renderStratum(mark);
     });
+
+    renderStats();
+    initSeismicCanvas();
 }
 
 function parseIssue(issue) {
@@ -372,10 +392,196 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ========== LAYER MINIMAP ==========
+
+function updateMinimap() {
+    document.querySelectorAll('.minimap-dot').forEach(dot => {
+        dot.classList.toggle('active', dot.dataset.layer === currentLayer);
+    });
+}
+
+function initMinimap() {
+    document.querySelectorAll('.minimap-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            const target = dot.dataset.layer;
+            showLayer(target);
+            if (target === 'exhaust') initExhaust();
+            if (target === 'infrastructure') initInfrastructure();
+            if (target === 'geology') initGeology();
+        });
+    });
+}
+
+// ========== GEO STATS ==========
+
+function renderStats() {
+    const countEl = document.getElementById('stat-count');
+    const lastEl = document.getElementById('stat-last');
+    const mineralsEl = document.getElementById('stat-minerals');
+    if (!countEl) return;
+
+    const all = [...localStrata];
+    countEl.textContent = all.length;
+
+    if (all.length === 0) {
+        lastEl.textContent = '—';
+        mineralsEl.innerHTML = '';
+        return;
+    }
+
+    // Last activity
+    const lastTime = Math.max(...all.map(m => m.timestamp));
+    const diff = Date.now() - lastTime;
+    let timeStr;
+    if (diff < 60000) timeStr = 'just now';
+    else if (diff < 3600000) timeStr = Math.floor(diff / 60000) + 'm ago';
+    else if (diff < 86400000) timeStr = Math.floor(diff / 3600000) + 'h ago';
+    else timeStr = Math.floor(diff / 86400000) + 'd ago';
+    lastEl.textContent = timeStr;
+
+    // Mineral breakdown
+    const counts = {};
+    all.forEach(m => { counts[m.mineral] = (counts[m.mineral] || 0) + 1; });
+    const maxCount = Math.max(...Object.values(counts));
+
+    mineralsEl.innerHTML = Object.entries(counts).map(([mineral, count]) => {
+        const color = {
+            idempotence: '#4a90d9',
+            forgery: '#e85d4e',
+            ledger: '#f4a261',
+            geology: '#2a9d8f',
+            exhaust: '#9b5de5',
+            unknown: '#8888a0'
+        }[mineral] || '#8888a0';
+        const width = maxCount > 0 ? Math.round((count / maxCount) * 24) : 0;
+        return `<div class="stat-mineral"><span class="bar" style="background:${color};width:${width}px"></span>${mineral} ${count}</div>`;
+    }).join('');
+}
+
+// ========== STRATUM MODAL ==========
+
+function openStratumModal(mark) {
+    const modal = document.getElementById('stratum-modal');
+    if (!modal) return;
+
+    document.getElementById('modal-mineral').style.background = mark.color;
+    document.getElementById('modal-author').textContent = mark.author;
+    document.getElementById('modal-timestamp').textContent = new Date(mark.timestamp).toLocaleString();
+    document.getElementById('modal-mineral-name').textContent = mark.mineral.toUpperCase();
+    document.getElementById('modal-hash').textContent = mark.hash;
+    document.getElementById('modal-text').textContent = mark.text;
+
+    // Try to find GitHub issue link by searching localStrata index or hash
+    // Since we don't store issue numbers, we link to the repo issues page
+    document.getElementById('modal-github').href = `https://github.com/${CONFIG.repo}/issues?q=is:issue+label:stratum+${encodeURIComponent(mark.hash)}`;
+
+    modal.classList.remove('hidden');
+}
+
+function closeStratumModal() {
+    const modal = document.getElementById('stratum-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function initModal() {
+    const modal = document.getElementById('stratum-modal');
+    if (!modal) return;
+    modal.querySelector('.modal-overlay').addEventListener('click', closeStratumModal);
+    modal.querySelector('.modal-close').addEventListener('click', closeStratumModal);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeStratumModal();
+    });
+
+    const copyBtn = document.getElementById('modal-copy-hash');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const hash = document.getElementById('modal-hash').textContent;
+            navigator.clipboard.writeText(hash).then(() => {
+                copyBtn.textContent = 'COPIED';
+                setTimeout(() => copyBtn.textContent = 'COPY', 1500);
+            });
+        });
+    }
+}
+
+// ========== SEISMIC CANVAS ==========
+
+function initSeismicCanvas() {
+    const canvas = document.getElementById('seismic-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let w, h;
+
+    function resize() {
+        const rect = canvas.getBoundingClientRect();
+        w = canvas.width = rect.width;
+        h = canvas.height = rect.height;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const history = [];
+    const maxPoints = 200;
+    let tick = 0;
+
+    function animate() {
+        tick++;
+        // Add new point based on mark activity
+        const markCount = localStrata.length;
+        const baseAmp = 2 + markCount * 1.5;
+        const noise = (Math.random() - 0.5) * baseAmp;
+        const wave = Math.sin(tick * 0.05) * (baseAmp * 0.5);
+        history.push(noise + wave);
+        if (history.length > maxPoints) history.shift();
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(42, 42, 58, 0.5)';
+        ctx.lineWidth = 1;
+        for (let y = h / 4; y < h; y += h / 4) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+        }
+
+        // Waveform
+        if (history.length > 1) {
+            ctx.beginPath();
+            ctx.strokeStyle = markCount > 0 ? 'rgba(244, 162, 97, 0.7)' : 'rgba(136, 136, 160, 0.4)';
+            ctx.lineWidth = 1.5;
+            const step = w / (maxPoints - 1);
+            for (let i = 0; i < history.length; i++) {
+                const x = i * step;
+                const y = h / 2 + history[i] * (h / 12);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Glow under line
+            ctx.lineTo((history.length - 1) * step, h / 2);
+            ctx.lineTo(0, h / 2);
+            ctx.closePath();
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, markCount > 0 ? 'rgba(244, 162, 97, 0.08)' : 'rgba(136, 136, 160, 0.03)');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
+
 // ========== EVENT LISTENERS ==========
 
 document.addEventListener('DOMContentLoaded', () => {
     initSurfaceCanvas();
+    initMinimap();
+    initModal();
 
     // Enter button
     document.getElementById('enter-btn').addEventListener('click', () => {
