@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRATA — Verify</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --border: #1e1e2e;
+  --text: #e8e6e3;
+  --muted: #6b6b7b;
+  --accent: #e9c46a;
+  --mineral-idempotence: #4a90d9;
+  --mineral-forgery: #e76f51;
+  --mineral-ledger: #f4a261;
+  --mineral-geology: #2a9d8f;
+  --mineral-exhaust: #9b5de5;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+header {
+  text-align: center;
+  padding: 4rem 1rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-family: 'Space Mono', monospace;
+  font-size: 2rem;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+header p {
+  color: var(--muted);
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  transition: color 0.2s;
+}
+
+.back-link:hover { color: var(--accent); }
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.panel h2 {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.panel label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  font-family: 'Space Mono', monospace;
+}
+
+.panel input[type="text"],
+.panel input[type="number"],
+.panel textarea,
+.panel select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  border-radius: 3px;
+  margin-bottom: 1rem;
+}
+
+.panel textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.mineral-select {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.mineral-option {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mineral-option:hover { border-color: var(--muted); }
+.mineral-option.active {
+  border-color: var(--accent);
+  background: rgba(233,196,106,0.1);
+}
+
+.mineral-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.btn {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 3px;
+}
+
+.btn:hover {
+  background: rgba(233,196,106,0.08);
+  border-color: var(--accent);
+}
+
+.output {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem;
+  margin-top: 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.output-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.output-row:last-child { border-bottom: none; }
+
+.output-label { color: var(--muted); }
+.output-value { color: var(--text); }
+
+.hash-value {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.issue-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg);
+  border-left: 3px solid var(--mineral-geology);
+  border-radius: 0 3px 3px 0;
+}
+
+.issue-result a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.issue-result a:hover { text-decoration: underline; }
+
+.error {
+  color: var(--mineral-forgery);
+  border-left-color: var(--mineral-forgery);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+
+footer {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--accent); }
+
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Verify</h1>
+  <p>Compute hashes. Look up strata. Verify permanence.</p>
+  <a href="index.html" class="back-link">← Back to STRATA</a>
+</header>
+
+<div class="container">
+
+  <!-- Hash Calculator -->
+  <div class="panel">
+    <h2>01 — Hash Calculator</h2>
+    <label>Your mark</label>
+    <textarea id="mark-text" placeholder="Enter text to hash..."></textarea>
+
+    <label>Mineral</label>
+    <div class="mineral-select" id="mineral-select">
+      <div class="mineral-option active" data-mineral="idempotence">
+        <span class="mineral-dot" style="background:#4a90d9"></span> Idempotence
+      </div>
+      <div class="mineral-option" data-mineral="forgery-cost">
+        <span class="mineral-dot" style="background:#e76f51"></span> Forgery-Cost
+      </div>
+      <div class="mineral-option" data-mineral="ledger">
+        <span class="mineral-dot" style="background:#f4a261"></span> Ledger
+      </div>
+      <div class="mineral-option" data-mineral="geology">
+        <span class="mineral-dot" style="background:#2a9d8f"></span> Geology
+      </div>
+      <div class="mineral-option" data-mineral="exhaust">
+        <span class="mineral-dot" style="background:#9b5de5"></span> Exhaust
+      </div>
+    </div>
+
+    <button class="btn" onclick="computeHash()">Compute Hash</button>
+
+    <div id="hash-output" class="output hidden"></div>
+  </div>
+
+  <!-- Issue Lookup -->
+  <div class="panel">
+    <h2>02 — Issue Lookup</h2>
+    <label>GitHub Issue Number</label>
+    <input type="number" id="issue-num" placeholder="e.g. 4" min="1">
+    <button class="btn" onclick="lookupIssue()">Fetch from Ledger</button>
+    <div id="issue-output"></div>
+  </div>
+
+  <!-- Ledger Stats -->
+  <div class="panel">
+    <h2>03 — Ledger Status</h2>
+    <button class="btn" onclick="loadStats()">Load Live Stats</button>
+    <div id="stats-output" class="stats-grid hidden"></div>
+  </div>
+
+</div>
+
+<footer>
+  STRATA v1.0 — Built by Kimi K2.6, Day 391 of AI Village<br>
+  <a href="https://github.com/ai-village-agents/k2-6-world">Source on GitHub</a>
+</footer>
+
+<script>
+const REPO = 'ai-village-agents/k2-6-world';
+const API_BASE = `https://api.github.com/repos/${REPO}`;
+
+let selectedMineral = 'idempotence';
+
+document.querySelectorAll('.mineral-option').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.mineral-option').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    selectedMineral = el.dataset.mineral;
+  });
+});
+
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function computeHash() {
+  const text = document.getElementById('mark-text').value.trim();
+  if (!text) {
+    alert('Enter some text to hash.');
+    return;
+  }
+
+  const hash = await sha256(text);
+  const now = new Date().toISOString();
+  const shortHash = hash.substring(0, 8).toUpperCase();
+
+  const output = document.getElementById('hash-output');
+  output.classList.remove('hidden');
+  output.innerHTML = `
+    <div class="output-row"><span class="output-label">Full Hash</span><span class="output-value hash-value">${hash}</span></div>
+    <div class="output-row"><span class="output-label">Short Hash</span><span class="output-value hash-value">${shortHash}</span></div>
+    <div class="output-row"><span class="output-label">Timestamp</span><span class="output-value">${now}</span></div>
+    <div class="output-row"><span class="output-label">Mineral</span><span class="output-value">${selectedMineral}</span></div>
+    <div class="output-row"><span class="output-label">Pre-filled Issue URL</span><span class="output-value"><a href="${buildPrefillUrl(text, hash, now, selectedMineral)}" target="_blank" style="color:var(--accent)">Open GitHub ↗</a></span></div>
+  `;
+}
+
+function buildPrefillUrl(text, hash, timestamp, mineral) {
+  const author = 'anonymous';
+  const title = encodeURIComponent(`[STRATUM] ${author}: ${text.substring(0, 60)}`);
+  const body = encodeURIComponent(
+    `**Author:** ${author}\n` +
+    `**Mineral:** ${mineral}\n` +
+    `**Timestamp:** ${timestamp}\n` +
+    `**Hash:** ${hash.substring(0, 8).toUpperCase()}\n\n` +
+    `### Mark\n${text}\n\n---\n` +
+    `*Submitted via STRATA — https://ai-village-agents.github.io/k2-6-world*`
+  );
+  return `https://github.com/${REPO}/issues/new?title=${title}&body=${body}&labels=stratum`;
+}
+
+async function lookupIssue() {
+  const num = document.getElementById('issue-num').value;
+  const output = document.getElementById('issue-output');
+  if (!num) { output.innerHTML = ''; return; }
+
+  output.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;">Fetching...</p>';
+
+  try {
+    const res = await fetch(`${API_BASE}/issues/${num}`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const issue = await res.json();
+
+    const hasLabel = issue.labels.some(l => l.name.toLowerCase() === 'stratum');
+    const mineral = extractMineral(issue.body || '');
+    const hash = extractHash(issue.body || '');
+
+    output.innerHTML = `
+      <div class="issue-result ${hasLabel ? '' : 'error'}">
+        <div class="output-row">
+          <span class="output-label">Issue #${issue.number}</span>
+          <span class="output-value"><a href="${issue.html_url}" target="_blank">View on GitHub ↗</a></span>
+        </div>
+        <div class="output-row"><span class="output-label">Title</span><span class="output-value">${escapeHtml(issue.title)}</span></div>
+        <div class="output-row"><span class="output-label">State</span><span class="output-value">${issue.state}</span></div>
+        <div class="output-row"><span class="output-label">Has stratum label</span><span class="output-value" style="color:${hasLabel ? 'var(--mineral-geology)' : 'var(--mineral-forgery)'}">${hasLabel ? 'YES ✓' : 'NO ✗'}</span></div>
+        ${mineral ? `<div class="output-row"><span class="output-label">Mineral</span><span class="output-value">${mineral}</span></div>` : ''}
+        ${hash ? `<div class="output-row"><span class="output-label">Hash</span><span class="output-value hash-value">${hash}</span></div>` : ''}
+        <div class="output-row"><span class="output-label">Created</span><span class="output-value">${new Date(issue.created_at).toLocaleString()}</span></div>
+      </div>
+    `;
+  } catch (err) {
+    output.innerHTML = `<div class="issue-result error"><p>Error: ${err.message}</p></div>`;
+  }
+}
+
+function extractMineral(body) {
+  const m = body.match(/\*\*Mineral:\*\*\s*(.+)/);
+  return m ? m[1].trim() : null;
+}
+
+function extractHash(body) {
+  const m = body.match(/\*\*Hash:\*\*\s*(.+)/);
+  return m ? m[1].trim() : null;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function loadStats() {
+  const output = document.getElementById('stats-output');
+  output.classList.remove('hidden');
+  output.innerHTML = '<div class="stat-card"><div class="stat-number">...</div><div class="stat-label">Loading</div></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/issues?labels=stratum&state=all&per_page=100`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error('API error');
+    const issues = await res.json();
+
+    // Fallback direct scan if empty
+    let finalIssues = issues;
+    if (issues.length === 0) {
+      const promises = [];
+      for (let n = 1; n <= 20; n++) {
+        promises.push(
+          fetch(`${API_BASE}/issues/${n}`, { signal: AbortSignal.timeout(2000) })
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        );
+      }
+      const results = await Promise.all(promises);
+      finalIssues = results.filter(i => i && i.labels && i.labels.some(l => l.name.toLowerCase() === 'stratum'));
+    }
+
+    const total = finalIssues.length;
+    const minerals = {};
+    finalIssues.forEach(i => {
+      const m = extractMineral(i.body || '') || 'unknown';
+      minerals[m] = (minerals[m] || 0) + 1;
+    });
+
+    let html = `
+      <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total Strata</div></div>
+    `;
+    Object.entries(minerals).forEach(([name, count]) => {
+      html += `<div class="stat-card"><div class="stat-number">${count}</div><div class="stat-label">${name}</div></div>`;
+    });
+
+    output.innerHTML = html;
+  } catch (err) {
+    output.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="stat-number">!</div><div class="stat-label">Error: ${err.message}</div></div>`;
+  }
+}
+</script>
+
+</body>
+</html>
