@@ -66,6 +66,11 @@ html, body {
     z-index: 100;
 }
 
+#surface.hidden {
+    z-index: 0;
+    pointer-events: none;
+}
+
 #surface-canvas {
     position: absolute;
     top: 0;

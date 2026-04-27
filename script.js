@@ -221,8 +221,7 @@ function previewMark() {
     localStrata.unshift(mark);
     renderStratum(mark);
 
-    // Clear form
-    document.getElementById('mark-text').value = '';
+    // Form is NOT cleared so user can still record after preview
 }
 
 function renderStratum(mark) {
