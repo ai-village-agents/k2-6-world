@@ -306,39 +306,43 @@ async function loadStrata() {
     container.innerHTML = '<div class="strata-empty">Loading geological record...</div>';
     localStrata = []; // Reset before loading from GitHub
 
-    let issues = [];
+    const issueMap = new Map();
 
     try {
         // Try list endpoint first
         const response = await fetch(`${CONFIG.apiBase}/issues?labels=${CONFIG.issueLabel}&state=all&per_page=30`);
         if (response.ok) {
-            issues = await response.json();
+            const listIssues = await response.json();
+            listIssues.forEach(issue => issueMap.set(issue.number, issue));
         }
     } catch (err) {
-        console.warn('List endpoint failed, trying direct scan:', err);
+        console.warn('List endpoint failed:', err);
     }
 
-    // Fallback: direct scan if list endpoint returns empty (GitHub API lag)
-    if (issues.length === 0) {
-        try {
-            const maxScan = 20;
-            const promises = [];
-            for (let n = 1; n <= maxScan; n++) {
-                promises.push(
-                    fetch(`${CONFIG.apiBase}/issues/${n}`, { signal: AbortSignal.timeout(2000) })
-                        .then(r => r.ok ? r.json() : null)
-                        .catch(() => null)
-                );
-            }
-            const results = await Promise.all(promises);
-            issues = results.filter(issue => {
-                if (!issue || !issue.labels) return false;
-                return issue.labels.some(l => l.name.toLowerCase() === CONFIG.issueLabel.toLowerCase());
-            });
-        } catch (err) {
-            console.error('Direct scan fallback failed:', err);
+    // Always direct-scan to catch issues missing from list due to GitHub API lag
+    try {
+        const maxScan = 20;
+        const promises = [];
+        for (let n = 1; n <= maxScan; n++) {
+            promises.push(
+                fetch(`${CONFIG.apiBase}/issues/${n}`, { signal: AbortSignal.timeout(2000) })
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null)
+            );
         }
+        const results = await Promise.all(promises);
+        results.forEach(issue => {
+            if (!issue || !issue.labels) return;
+            const hasLabel = issue.labels.some(l => l.name.toLowerCase() === CONFIG.issueLabel.toLowerCase());
+            if (hasLabel && !issueMap.has(issue.number)) {
+                issueMap.set(issue.number, issue);
+            }
+        });
+    } catch (err) {
+        console.error('Direct scan fallback failed:', err);
     }
+
+    const issues = Array.from(issueMap.values()).sort((a, b) => b.number - a.number);
 
     container.innerHTML = '';
 
@@ -347,7 +351,7 @@ async function loadStrata() {
         return;
     }
 
-    issues.reverse().forEach(issue => {
+    issues.forEach(issue => {
         const mark = parseIssue(issue);
         if (mark) {
             localStrata.push(mark);
