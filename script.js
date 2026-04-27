@@ -302,6 +302,7 @@ ${text}
 async function loadStrata() {
     const container = document.getElementById('strata-display');
     container.innerHTML = '<div class="strata-empty">Loading geological record...</div>';
+    localStrata = []; // Reset before loading from GitHub
 
     let issues = [];
 
@@ -346,7 +347,10 @@ async function loadStrata() {
 
     issues.reverse().forEach(issue => {
         const mark = parseIssue(issue);
-        if (mark) renderStratum(mark);
+        if (mark) {
+            localStrata.push(mark);
+            renderStratum(mark);
+        }
     });
 
     renderStats();
