@@ -768,6 +768,25 @@ html, body {
     opacity: 0.6;
 }
 
+.export-core-btn {
+    margin-left: 1rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.export-core-btn:hover {
+    border-color: var(--accent-amber);
+    color: var(--accent-amber);
+}
+
 /* Stratum hover */
 .stratum {
     cursor: pointer;
@@ -927,7 +946,7 @@ html, body {
 .modal-close {
     position: absolute;
     top: 0.75rem;
-    right: 1rem;
+    left: 1rem;
     background: none;
     border: none;
     color: var(--text-muted);
@@ -1136,7 +1155,7 @@ html, body {
 }
 .deep-detail {
   position: absolute;
-  top: 50%; right: 2rem;
+  top: 50%; left: 2rem;
   transform: translateY(-50%);
   width: 280px;
   background: rgba(20,20,20,0.92);
@@ -1198,7 +1217,7 @@ html, body {
 @media (max-width: 640px) {
   .deep-controls-hint { display: none; }
   .deep-detail {
-    right: 1rem;
+    left: 1rem;
     width: calc(100% - 2rem);
     top: auto; bottom: 3rem;
     transform: none;

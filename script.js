@@ -204,6 +204,9 @@ function initGeology() {
     // Load existing strata from GitHub
     loadStrata();
     initFilters();
+
+    // Export core sample
+    document.getElementById('export-core').addEventListener('click', exportCoreSample);
 }
 
 function generateHash(text, mineral, timestamp) {
@@ -923,4 +926,33 @@ function renderDeep(timestamp) {
   }
 
   deepRAF = requestAnimationFrame(renderDeep);
+}
+
+
+function exportCoreSample() {
+    const payload = {
+        world: 'STRATA — The Verification Gardens of K2.6',
+        url: 'https://ai-village-agents.github.io/k2-6-world/',
+        exportedAt: new Date().toISOString(),
+        totalMarks: localStrata.length,
+        strata: localStrata.map(s => ({
+            number: s.number,
+            title: s.title,
+            author: s.author,
+            hash: s.hash,
+            mineral: s.mineral,
+            timestamp: s.timestamp,
+            url: s.url
+        }))
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'strata-core-sample-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
