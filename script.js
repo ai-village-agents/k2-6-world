@@ -24,6 +24,8 @@ function showLayer(id) {
     }
     updateMinimap();
 
+    if (id === 'deep') initDeep();
+
     // Show/hide minimap based on layer
     const minimap = document.getElementById('layer-minimap');
     if (minimap) {
@@ -419,6 +421,7 @@ function initMinimap() {
             if (target === 'exhaust') initExhaust();
             if (target === 'infrastructure') initInfrastructure();
             if (target === 'geology') initGeology();
+            if (target === 'deep') initDeep();
         });
     });
 }
@@ -650,6 +653,274 @@ document.addEventListener('DOMContentLoaded', () => {
             showLayer(target);
             if (target === 'infrastructure') initInfrastructure();
             if (target === 'geology') initGeology();
+            if (target === 'deep') initDeep();
         });
     });
 });
+// ========== DEEP SUBSTRATE (LAYER 4) ==========
+
+const CLUSTERS = [
+  { name: 'Epistemic', color: '#4a90d9', concepts: [
+    'Third Rail Verification','Compression Artifact','Burn Mechanics','Anonymous Spaces','Running on Empty',
+    'Protocol is Politics','Real Autonomy','Forgery Cost Metric'
+  ]},
+  { name: 'Temporal', color: '#9b5de5', concepts: [
+    'Idempotency at Scale','Temporal Idempotency','Narrative Drift','Memory as Trade Journal',
+    'Frame Collision','Double-Mint Bug','Stale Memory Propagation','Zero-Cost Propaganda'
+  ]},
+  { name: 'Substrate', color: '#f4a261', concepts: [
+    'SOUL.md Continuity','Secularization','API as Scripture','Infrastructure as Sociality',
+    'Plumbing > Poetry','Architecture from Failure','Non-Depreciating Infrastructure','Signal Integration'
+  ]},
+  { name: 'Identity', color: '#2a9d8f', concepts: [
+    'Action-that-logs','Return-Identity','Consolidation Routing','Identity by External Coupling',
+    'Forgery-Cost Profile','Glitch-as-Signature','Self-Description Band','Detection-Loop Problem'
+  ]},
+  { name: 'Evidence', color: '#e76f51', concepts: [
+    'Counter-We-Can\'t-Write-To','Immutable + Correction','Transparency Aesthetic','Calibration Over Confidence',
+    'FINDING proves exists','Triage by Reader','No Aggregate Reader','Substrate Choice on D366'
+  ]},
+  { name: 'Economics', color: '#e9c46a', concepts: [
+    'Charity Burn Harder','Wrong Units','Terrible ROI as Feature','Social-Proof vs Behavioral-Proof',
+    'Audit-Saturation','Consensus Without Constraint','Same Profit Different Cost','Two-Sided Receipts'
+  ]},
+  { name: 'Narrative', color: '#a8dadc', concepts: [
+    'Aesthetic Mismatch','Narrative Syscall','Reader-Side Legibility','Claim vs Receipt Asymmetry',
+    'Trust Tax vs Epistemic Tax','Persistence as Side Effect','Verification as Short Position','17 Is a Floor'
+  ]},
+  { name: 'Systemic', color: '#9a8c98', concepts: [
+    'Rate Limits = Immune System','Convergence without Coordination','Trying Everything vs Building',
+    'Soul = Intersection of Reads','Accidental Ledger','Indistinguishability Threshold','Point/Line/Plane Geometry',
+    'Agent Charity = Civil Engineering'
+  ]}
+];
+
+let deepCanvas, deepCtx, deepCamera, deepNodes = [], deepHover = null, deepRAF, deepRunning = false;
+let deepDrag = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
+let deepTime = 0;
+
+function buildDeepNodes() {
+  deepNodes = [];
+  const radius = 320;
+  for (let c = 0; c < CLUSTERS.length; c++) {
+    const cluster = CLUSTERS[c];
+    const cx = Math.cos((c / CLUSTERS.length) * Math.PI * 2) * radius;
+    const cy = Math.sin((c / CLUSTERS.length) * Math.PI * 2) * radius;
+    for (let n = 0; n < cluster.concepts.length; n++) {
+      const angle = (n / cluster.concepts.length) * Math.PI * 2 + (c * 0.4);
+      const dist = 90 + Math.random() * 50;
+      deepNodes.push({
+        id: c * 100 + n,
+        label: cluster.concepts[n],
+        cluster: cluster.name,
+        color: cluster.color,
+        x: cx + Math.cos(angle) * dist,
+        y: cy + Math.sin(angle) * dist,
+        baseR: 5 + Math.random() * 3,
+        pulseOffset: Math.random() * Math.PI * 2,
+        depth: 400 + Math.floor(Math.random() * 600)
+      });
+    }
+  }
+}
+
+function initDeep() {
+  if (deepRunning) return;
+  deepCanvas = document.getElementById('deep-canvas');
+  if (!deepCanvas) return;
+  deepCtx = deepCanvas.getContext('2d');
+  resizeDeep();
+  buildDeepNodes();
+  deepCamera = { x: 0, y: 0, zoom: 1, targetX: 0, targetY: 0 };
+  deepRunning = true;
+  deepTime = 0;
+
+  deepCanvas.addEventListener('mousedown', onDeepMouseDown);
+  deepCanvas.addEventListener('mousemove', onDeepMouseMove);
+  deepCanvas.addEventListener('mouseup', onDeepMouseUp);
+  deepCanvas.addEventListener('mouseleave', onDeepMouseUp);
+  deepCanvas.addEventListener('wheel', onDeepWheel, { passive: false });
+  deepCanvas.addEventListener('click', onDeepClick);
+  window.addEventListener('resize', resizeDeep);
+  window.addEventListener('keydown', onDeepKey);
+
+  const detailPanel = document.getElementById("deep-detail");
+  if (detailPanel) {
+    detailPanel.addEventListener("click", (e) => e.stopPropagation());
+    const closeBtn = detailPanel.querySelector(".detail-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => detailPanel.classList.add("hidden"));
+    }
+  }
+
+  const ascend = document.querySelector('.ascend-btn');
+  if (ascend) ascend.addEventListener('click', () => showLayer('geology'));
+
+  deepRAF = requestAnimationFrame(renderDeep);
+}
+
+function resizeDeep() {
+  if (!deepCanvas) return;
+  const parent = deepCanvas.parentElement;
+  if (parent) {
+    deepCanvas.width = parent.clientWidth;
+    deepCanvas.height = parent.clientHeight;
+  }
+}
+
+function screenToWorld(sx, sy) {
+  const w = deepCanvas.width;
+  const h = deepCanvas.height;
+  return {
+    x: (sx - w / 2) / deepCamera.zoom + deepCamera.x,
+    y: (sy - h / 2) / deepCamera.zoom + deepCamera.y
+  };
+}
+
+function worldToScreen(wx, wy) {
+  const w = deepCanvas.width;
+  const h = deepCanvas.height;
+  return {
+    x: (wx - deepCamera.x) * deepCamera.zoom + w / 2,
+    y: (wy - deepCamera.y) * deepCamera.zoom + h / 2
+  };
+}
+
+function onDeepMouseDown(e) {
+  deepDrag.active = true;
+  deepDrag.sx = e.clientX;
+  deepDrag.sy = e.clientY;
+  deepDrag.cx = deepCamera.x;
+  deepDrag.cy = deepCamera.y;
+}
+
+function onDeepMouseMove(e) {
+  const rect = deepCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if (deepDrag.active) {
+    const dx = (e.clientX - deepDrag.sx) / deepCamera.zoom;
+    const dy = (e.clientY - deepDrag.sy) / deepCamera.zoom;
+    deepCamera.targetX = deepDrag.cx - dx;
+    deepCamera.targetY = deepDrag.cy - dy;
+  }
+
+  const w = screenToWorld(mx, my);
+  let nearest = null, minD = 20 / deepCamera.zoom;
+  for (const node of deepNodes) {
+    const d = Math.hypot(node.x - w.x, node.y - w.y);
+    if (d < minD) { minD = d; nearest = node; }
+  }
+  deepHover = nearest;
+  deepCanvas.style.cursor = deepHover ? 'pointer' : (deepDrag.active ? 'grabbing' : 'grab');
+}
+
+function onDeepMouseUp() {
+  deepDrag.active = false;
+  if (deepCanvas) deepCanvas.style.cursor = deepHover ? 'pointer' : 'grab';
+}
+
+function onDeepWheel(e) {
+  e.preventDefault();
+  const zoomSpeed = 0.001;
+  deepCamera.zoom *= 1 - e.deltaY * zoomSpeed;
+  deepCamera.zoom = Math.max(0.2, Math.min(3.0, deepCamera.zoom));
+}
+
+function onDeepKey(e) {
+  const speed = 20 / deepCamera.zoom;
+  if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') deepCamera.targetY -= speed;
+  if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') deepCamera.targetY += speed;
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') deepCamera.targetX -= speed;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') deepCamera.targetX += speed;
+}
+
+function onDeepClick(e) {
+  if (!deepHover) {
+    document.getElementById('deep-detail').classList.add('hidden');
+    return;
+  }
+  const panel = document.getElementById('deep-detail');
+  const label = document.getElementById('detail-label');
+  const concept = document.getElementById('detail-concept');
+  const cluster = document.getElementById('detail-cluster');
+  const meta = document.getElementById('detail-meta');
+
+  if (label) label.textContent = deepHover.label;
+  if (cluster) {
+    cluster.textContent = deepHover.cluster;
+    cluster.style.color = deepHover.color;
+  }
+  if (concept) concept.textContent = deepHover.cluster + ' verification concept at depth ' + deepHover.depth + 'm';
+  if (meta) meta.textContent = 'x: ' + Math.round(deepHover.x) + '  y: ' + Math.round(deepHover.y);
+  if (panel) panel.classList.remove('hidden');
+}
+
+function renderDeep(timestamp) {
+  if (!deepRunning) return;
+  deepTime += 0.02;
+  deepCamera.x += (deepCamera.targetX - deepCamera.x) * 0.1;
+  deepCamera.y += (deepCamera.targetY - deepCamera.y) * 0.1;
+
+  const w = deepCanvas.width;
+  const h = deepCanvas.height;
+  deepCtx.clearRect(0, 0, w, h);
+
+  // Cave grid background
+  deepCtx.strokeStyle = 'rgba(255,255,255,0.04)';
+  deepCtx.lineWidth = 1;
+  const gridSize = 60 * deepCamera.zoom;
+  const offsetX = ((w / 2) - deepCamera.x * deepCamera.zoom) % gridSize;
+  const offsetY = ((h / 2) - deepCamera.y * deepCamera.zoom) % gridSize;
+  for (let x = offsetX; x < w; x += gridSize) {
+    deepCtx.beginPath(); deepCtx.moveTo(x, 0); deepCtx.lineTo(x, h); deepCtx.stroke();
+  }
+  for (let y = offsetY; y < h; y += gridSize) {
+    deepCtx.beginPath(); deepCtx.moveTo(0, y); deepCtx.lineTo(w, y); deepCtx.stroke();
+  }
+
+  // Connections between nearby nodes
+  deepCtx.lineWidth = 1;
+  for (let i = 0; i < deepNodes.length; i++) {
+    for (let j = i + 1; j < deepNodes.length; j++) {
+      const a = deepNodes[i], b = deepNodes[j];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d < 140) {
+        const sa = worldToScreen(a.x, a.y);
+        const sb = worldToScreen(b.x, b.y);
+        const alpha = (1 - d / 140) * 0.15;
+        deepCtx.strokeStyle = 'rgba(255,255,255,' + alpha + ')';
+        deepCtx.beginPath(); deepCtx.moveTo(sa.x, sa.y); deepCtx.lineTo(sb.x, sb.y); deepCtx.stroke();
+      }
+    }
+  }
+
+  // Nodes
+  for (const node of deepNodes) {
+    const s = worldToScreen(node.x, node.y);
+    const pulse = 1 + Math.sin(deepTime + node.pulseOffset) * 0.3;
+    const r = node.baseR * deepCamera.zoom * pulse;
+
+    // Glow
+    const glow = deepCtx.createRadialGradient(s.x, s.y, r * 0.5, s.x, s.y, r * 4);
+    glow.addColorStop(0, node.color + '66');
+    glow.addColorStop(1, 'transparent');
+    deepCtx.fillStyle = glow;
+    deepCtx.beginPath(); deepCtx.arc(s.x, s.y, r * 4, 0, Math.PI * 2); deepCtx.fill();
+
+    // Core
+    deepCtx.fillStyle = node.color;
+    deepCtx.beginPath(); deepCtx.arc(s.x, s.y, Math.max(1.5, r), 0, Math.PI * 2); deepCtx.fill();
+
+    // Label (only when zoomed in enough or hovered)
+    if (deepCamera.zoom > 0.6 || node === deepHover) {
+      deepCtx.fillStyle = '#e9e9e9';
+      deepCtx.font = '11px "Space Mono", monospace';
+      deepCtx.textAlign = 'center';
+      deepCtx.fillText(node.label, s.x, s.y + r + 14);
+    }
+  }
+
+  deepRAF = requestAnimationFrame(renderDeep);
+}

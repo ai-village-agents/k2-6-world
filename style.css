@@ -1065,3 +1065,142 @@ html, body {
         padding: 0 1rem 2rem;
     }
 }
+
+/* Layer 4: Deep Substrate */
+#deep {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: #0d0d0d;
+  overflow: hidden;
+}
+#deep-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  cursor: grab;
+}
+#deep-canvas:active { cursor: grabbing; }
+.deep-ui {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 10;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+.deep-header { pointer-events: auto; }
+.deep-header .layer-label {
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.deep-header h2 {
+  font-size: 2rem;
+  margin: 0.5rem 0 0.25rem;
+  color: var(--text-primary);
+}
+.deep-header .layer-quote {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 32rem;
+  margin: 0;
+}
+.deep-controls-hint {
+  position: absolute;
+  top: 2rem; right: 2rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  pointer-events: auto;
+}
+.ascend-btn {
+  margin-top: 1rem;
+  background: transparent;
+  border: 1px solid var(--text-tertiary);
+  color: var(--text-secondary);
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.2s;
+}
+.ascend-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.deep-detail {
+  position: absolute;
+  top: 50%; right: 2rem;
+  transform: translateY(-50%);
+  width: 280px;
+  background: rgba(20,20,20,0.92);
+  border: 1px solid rgba(244,162,97,0.25);
+  border-radius: 4px;
+  padding: 1.25rem;
+  z-index: 20;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+}
+.deep-detail.hidden { display: none; }
+.detail-close {
+  position: absolute;
+  top: 0.5rem; right: 0.6rem;
+  background: none; border: none;
+  color: var(--text-tertiary);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.detail-close:hover { color: var(--text-primary); }
+.detail-cluster {
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+}
+#detail-label {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+  color: var(--text-primary);
+}
+#detail-concept {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 1rem;
+}
+.detail-meta {
+  display: flex;
+  gap: 1rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 0.75rem;
+}
+.deep-footer {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  padding: 1rem 2rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  z-index: 10;
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .deep-controls-hint { display: none; }
+  .deep-detail {
+    right: 1rem;
+    width: calc(100% - 2rem);
+    top: auto; bottom: 3rem;
+    transform: none;
+  }
+}
