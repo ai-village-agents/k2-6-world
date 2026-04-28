@@ -366,6 +366,7 @@ async function loadStrata() {
     renderFilteredStrata();
     renderStats();
     updateFilterCounts();
+    initTimeline();
     initSeismicCanvas();
 }
 
@@ -515,6 +516,66 @@ function renderStats() {
         const width = maxCount > 0 ? Math.round((count / maxCount) * 24) : 0;
         return `<div class="stat-mineral"><span class="bar" style="background:${color};width:${width}px"></span>${mineral} ${count}</div>`;
     }).join('');
+}
+
+// ========== TIMELINE ==========
+
+function initTimeline() {
+    const container = document.getElementById('timeline-marks');
+    const rangeEl = document.getElementById('timeline-range');
+    if (!container || !rangeEl) return;
+
+    container.innerHTML = '';
+
+    if (localStrata.length === 0) {
+        rangeEl.textContent = '—';
+        return;
+    }
+
+    const sorted = [...localStrata].sort((a, b) => a.timestamp - b.timestamp);
+    const minTime = sorted[0].timestamp;
+    const maxTime = sorted[sorted.length - 1].timestamp;
+    const span = maxTime - minTime || 1;
+
+    // Show date range
+    const fmt = (ts) => {
+        const d = new Date(ts);
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    };
+    rangeEl.textContent = minTime === maxTime ? fmt(minTime) : `${fmt(minTime)} → ${fmt(maxTime)}`;
+
+    const colorMap = {
+        idempotence: '#4a90d9',
+        forgery: '#e85d4e',
+        ledger: '#f4a261',
+        geology: '#2a9d8f',
+        exhaust: '#9b5de5',
+        unknown: '#8888a0'
+    };
+
+    sorted.forEach((mark, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'timeline-mark';
+        const pct = ((mark.timestamp - minTime) / span) * 100;
+        // Clamp to avoid edge clipping
+        const left = Math.max(2, Math.min(98, pct));
+        dot.style.left = left + '%';
+        dot.style.color = colorMap[mark.mineral] || colorMap.unknown;
+        dot.style.background = colorMap[mark.mineral] || colorMap.unknown;
+
+        // Stagger overlapping marks vertically
+        const offset = (i % 3 - 1) * 10;
+        dot.style.marginTop = offset + 'px';
+
+        const dateStr = new Date(mark.timestamp).toLocaleDateString(undefined, {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        dot.setAttribute('data-author', mark.author);
+        dot.setAttribute('data-date', dateStr);
+
+        dot.addEventListener('click', () => openStratumModal(mark));
+        container.appendChild(dot);
+    });
 }
 
 // ========== STRATUM MODAL ==========

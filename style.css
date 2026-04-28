@@ -1223,3 +1223,111 @@ html, body {
     transform: none;
   }
 }
+
+/* ========== TIMELINE ========== */
+.geo-timeline {
+  margin: 2rem 0;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  background: rgba(26,26,26,0.6);
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.timeline-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.timeline-range {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--accent-amber);
+}
+
+.timeline-track {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border);
+  transform: translateY(-50%);
+}
+
+#timeline-marks {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.timeline-mark {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  border: 2px solid #1a1a1a;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 2;
+}
+
+.timeline-mark:hover {
+  transform: translate(-50%, -50%) scale(1.5);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.timeline-mark::after {
+  content: attr(data-author);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-light);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.timeline-mark:hover::after {
+  opacity: 1;
+}
+
+.timeline-mark::before {
+  content: attr(data-date);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.timeline-mark:hover::before {
+  opacity: 1;
+}
