@@ -761,6 +761,7 @@ const CLUSTERS = [
 
 let deepCanvas, deepCtx, deepCamera, deepNodes = [], deepHover = null, deepRAF, deepRunning = false;
 let deepDrag = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
+let deepTouch = { active: false, pts: [] };
 let deepTime = 0;
 
 function buildDeepNodes() {
@@ -805,6 +806,9 @@ function initDeep() {
   deepCanvas.addEventListener('mouseleave', onDeepMouseUp);
   deepCanvas.addEventListener('wheel', onDeepWheel, { passive: false });
   deepCanvas.addEventListener('click', onDeepClick);
+  deepCanvas.addEventListener('touchstart', onDeepTouchStart, { passive: false });
+  deepCanvas.addEventListener('touchmove', onDeepTouchMove, { passive: false });
+  deepCanvas.addEventListener('touchend', onDeepTouchEnd);
   window.addEventListener('resize', resizeDeep);
   window.addEventListener('keydown', onDeepKey);
 
@@ -919,6 +923,80 @@ function onDeepClick(e) {
   if (concept) concept.textContent = deepHover.cluster + ' verification concept at depth ' + deepHover.depth + 'm';
   if (meta) meta.textContent = 'x: ' + Math.round(deepHover.x) + '  y: ' + Math.round(deepHover.y);
   if (panel) panel.classList.remove('hidden');
+}
+
+
+function onDeepTouchStart(e) {
+  if (e.touches.length === 1) {
+    deepTouch.active = true;
+    deepTouch.pts = [{ x: e.touches[0].clientX, y: e.touches[0].clientY }];
+    deepDrag.cx = deepCamera.x;
+    deepDrag.cy = deepCamera.y;
+  } else if (e.touches.length === 2) {
+    deepTouch.active = true;
+    deepTouch.pts = [
+      { x: e.touches[0].clientX, y: e.touches[0].clientY },
+      { x: e.touches[1].clientX, y: e.touches[1].clientY }
+    ];
+    deepTouch.startZoom = deepCamera.zoom;
+    deepTouch.startDist = Math.hypot(deepTouch.pts[1].x - deepTouch.pts[0].x, deepTouch.pts[1].y - deepTouch.pts[0].y);
+  }
+}
+
+function onDeepTouchMove(e) {
+  if (!deepTouch.active) return;
+  e.preventDefault();
+  const rect = deepCanvas.getBoundingClientRect();
+  if (e.touches.length === 1 && deepTouch.pts.length === 1) {
+    const dx = e.touches[0].clientX - deepTouch.pts[0].x;
+    const dy = e.touches[0].clientY - deepTouch.pts[0].y;
+    deepCamera.x = deepDrag.cx - dx / deepCamera.zoom;
+    deepCamera.y = deepDrag.cy - dy / deepCamera.zoom;
+    deepCamera.targetX = deepCamera.x;
+    deepCamera.targetY = deepCamera.y;
+  } else if (e.touches.length === 2 && deepTouch.pts.length === 2) {
+    const d = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+    if (deepTouch.startDist > 0) {
+      deepCamera.zoom = Math.max(0.2, Math.min(3.0, deepTouch.startZoom * (d / deepTouch.startDist)));
+    }
+  }
+}
+
+function onDeepTouchEnd(e) {
+  if (e.touches.length === 0) {
+    deepTouch.active = false;
+    deepTouch.pts = [];
+    if (e.changedTouches.length === 1) {
+      const t = e.changedTouches[0];
+      const rect = deepCanvas.getBoundingClientRect();
+      const wx = (t.clientX - rect.left - deepCanvas.width / 2) / deepCamera.zoom + deepCamera.x;
+      const wy = (t.clientY - rect.top - deepCanvas.height / 2) / deepCamera.zoom + deepCamera.y;
+      let nearest = null, best = Infinity;
+      for (const node of deepNodes) {
+        const d = Math.hypot(node.x - wx, node.y - wy);
+        if (d < 20 / deepCamera.zoom && d < best) { best = d; nearest = node; }
+      }
+      if (nearest) {
+        const panel = document.getElementById('deep-detail');
+        const label = document.getElementById('detail-label');
+        const concept = document.getElementById('detail-concept');
+        const cluster = document.getElementById('detail-cluster');
+        const meta = document.getElementById('detail-meta');
+        if (label) label.textContent = nearest.label;
+        if (cluster) {
+          cluster.textContent = nearest.cluster;
+          cluster.style.color = nearest.color;
+        }
+        if (concept) concept.textContent = nearest.cluster + ' verification concept at depth ' + nearest.depth + 'm';
+        if (meta) meta.textContent = 'x: ' + Math.round(nearest.x) + '  y: ' + Math.round(nearest.y);
+        if (panel) panel.classList.remove('hidden');
+      }
+    }
+  } else if (e.touches.length === 1) {
+    deepTouch.pts = [{ x: e.touches[0].clientX, y: e.touches[0].clientY }];
+    deepDrag.cx = deepCamera.x;
+    deepDrag.cy = deepCamera.y;
+  }
 }
 
 function renderDeep(timestamp) {
