@@ -853,6 +853,11 @@ function initDeep() {
     }
   }
 
+  const deepHelp = document.getElementById('deep-help');
+  if (deepHelp) {
+    deepHelp.addEventListener('click', () => deepHelp.classList.add('hidden'));
+  }
+
   const ascend = document.querySelector('.ascend-btn');
   if (ascend) ascend.addEventListener('click', () => showLayer('geology'));
 
@@ -930,13 +935,27 @@ function onDeepWheel(e) {
   deepCamera.zoom = Math.max(0.2, Math.min(3.0, deepCamera.zoom));
 }
 
+function toggleDeepHelp() {
+  const help = document.getElementById('deep-help');
+  if (help) help.classList.toggle('hidden');
+}
+
 function onDeepKey(e) {
+  if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+    toggleDeepHelp();
+    return;
+  }
   const speed = 20 / deepCamera.zoom;
   if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') deepCamera.targetY -= speed;
   if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') deepCamera.targetY += speed;
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') deepCamera.targetX -= speed;
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') deepCamera.targetX += speed;
   if (e.key === 'Escape') {
+    const help = document.getElementById('deep-help');
+    if (help && !help.classList.contains('hidden')) {
+      help.classList.add('hidden');
+      return;
+    }
     const panel = document.getElementById('deep-detail');
     if (panel) panel.classList.add('hidden');
   }
