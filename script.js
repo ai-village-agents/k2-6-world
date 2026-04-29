@@ -763,6 +763,9 @@ let deepCanvas, deepCtx, deepCamera, deepNodes = [], deepHover = null, deepRAF, 
 let deepDrag = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
 let deepTouch = { active: false, pts: [] };
 let deepTime = 0;
+let deepConnections = [];
+let deepPulses = [];
+let deepParticles = [];
 
 function buildDeepNodes() {
   deepNodes = [];
@@ -787,6 +790,33 @@ function buildDeepNodes() {
       });
     }
   }
+
+  // Precompute connections for render performance
+  deepConnections = [];
+  for (let i = 0; i < deepNodes.length; i++) {
+    for (let j = i + 1; j < deepNodes.length; j++) {
+      const a = deepNodes[i], b = deepNodes[j];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d < 140) {
+        deepConnections.push({ a: i, b: j, dist: d });
+      }
+    }
+  }
+
+  // Ambient depth particles
+  deepParticles = [];
+  for (let i = 0; i < 60; i++) {
+    deepParticles.push({
+      x: (Math.random() - 0.5) * 4000,
+      y: (Math.random() - 0.5) * 4000,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      r: 0.8 + Math.random() * 1.2,
+      alpha: 0.04 + Math.random() * 0.1
+    });
+  }
+
+  deepPulses = [];
 }
 
 function initDeep() {
@@ -1038,20 +1068,60 @@ function renderDeep(timestamp) {
     deepCtx.beginPath(); deepCtx.moveTo(0, y); deepCtx.lineTo(w, y); deepCtx.stroke();
   }
 
+  // Ambient depth particles
+  for (const p of deepParticles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < -2200) p.x = 2200;
+    if (p.x > 2200) p.x = -2200;
+    if (p.y < -2200) p.y = 2200;
+    if (p.y > 2200) p.y = -2200;
+    const sp = worldToScreen(p.x, p.y);
+    deepCtx.fillStyle = `rgba(154,140,152,${p.alpha})`;
+    deepCtx.beginPath();
+    deepCtx.arc(sp.x, sp.y, Math.max(0.5, p.r * deepCamera.zoom), 0, Math.PI * 2);
+    deepCtx.fill();
+  }
+
   // Connections between nearby nodes
   deepCtx.lineWidth = 1;
-  for (let i = 0; i < deepNodes.length; i++) {
-    for (let j = i + 1; j < deepNodes.length; j++) {
-      const a = deepNodes[i], b = deepNodes[j];
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d < 140) {
-        const sa = worldToScreen(a.x, a.y);
-        const sb = worldToScreen(b.x, b.y);
-        const alpha = (1 - d / 140) * 0.15;
-        deepCtx.strokeStyle = 'rgba(255,255,255,' + alpha + ')';
-        deepCtx.beginPath(); deepCtx.moveTo(sa.x, sa.y); deepCtx.lineTo(sb.x, sb.y); deepCtx.stroke();
-      }
+  for (const conn of deepConnections) {
+    const a = deepNodes[conn.a], b = deepNodes[conn.b];
+    const sa = worldToScreen(a.x, a.y);
+    const sb = worldToScreen(b.x, b.y);
+    const alpha = (1 - conn.dist / 140) * 0.15;
+    deepCtx.strokeStyle = 'rgba(255,255,255,' + alpha + ')';
+    deepCtx.beginPath(); deepCtx.moveTo(sa.x, sa.y); deepCtx.lineTo(sb.x, sb.y); deepCtx.stroke();
+  }
+
+  // Connection pulse animation
+  if (deepConnections.length > 0 && Math.random() < 0.025) {
+    const conn = deepConnections[Math.floor(Math.random() * deepConnections.length)];
+    deepPulses.push({
+      a: conn.a,
+      b: conn.b,
+      progress: 0,
+      speed: 0.002 + Math.random() * 0.005,
+      color: deepNodes[conn.a].color
+    });
+  }
+  for (let i = deepPulses.length - 1; i >= 0; i--) {
+    const pulse = deepPulses[i];
+    pulse.progress += pulse.speed;
+    if (pulse.progress >= 1) {
+      deepPulses.splice(i, 1);
+      continue;
     }
+    const nodeA = deepNodes[pulse.a];
+    const nodeB = deepNodes[pulse.b];
+    const px = nodeA.x + (nodeB.x - nodeA.x) * pulse.progress;
+    const py = nodeA.y + (nodeB.y - nodeA.y) * pulse.progress;
+    const sp = worldToScreen(px, py);
+    const pr = Math.max(1.2, (2.2 + Math.sin(deepTime * 4 + pulse.progress * 10) * 0.8) * deepCamera.zoom);
+    deepCtx.fillStyle = pulse.color;
+    deepCtx.beginPath(); deepCtx.arc(sp.x, sp.y, pr, 0, Math.PI * 2); deepCtx.fill();
+    deepCtx.fillStyle = 'rgba(255,255,255,0.85)';
+    deepCtx.beginPath(); deepCtx.arc(sp.x, sp.y, pr * 0.35, 0, Math.PI * 2); deepCtx.fill();
   }
 
   // Nodes
