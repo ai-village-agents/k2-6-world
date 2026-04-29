@@ -795,6 +795,7 @@ function initDeep() {
   if (!deepCanvas) return;
   deepCtx = deepCanvas.getContext('2d');
   resizeDeep();
+  setTimeout(resizeDeep, 0);
   buildDeepNodes();
   deepCamera = { x: 0, y: 0, zoom: 1, targetX: 0, targetY: 0 };
   deepRunning = true;
@@ -865,8 +866,10 @@ function onDeepMouseDown(e) {
 
 function onDeepMouseMove(e) {
   const rect = deepCanvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+  const scaleX = deepCanvas.width / rect.width;
+  const scaleY = deepCanvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
 
   if (deepDrag.active) {
     const dx = (e.clientX - deepDrag.sx) / deepCamera.zoom;
@@ -876,7 +879,7 @@ function onDeepMouseMove(e) {
   }
 
   const w = screenToWorld(mx, my);
-  let nearest = null, minD = 20 / deepCamera.zoom;
+  let nearest = null, minD = 60 / deepCamera.zoom;
   for (const node of deepNodes) {
     const d = Math.hypot(node.x - w.x, node.y - w.y);
     if (d < minD) { minD = d; nearest = node; }
