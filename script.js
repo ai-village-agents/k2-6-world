@@ -806,6 +806,7 @@ function initDeep() {
   deepCanvas.addEventListener('mouseleave', onDeepMouseUp);
   deepCanvas.addEventListener('wheel', onDeepWheel, { passive: false });
   deepCanvas.addEventListener('click', onDeepClick);
+  deepCanvas.addEventListener('dblclick', onDeepDblClick);
   deepCanvas.addEventListener('touchstart', onDeepTouchStart, { passive: false });
   deepCanvas.addEventListener('touchmove', onDeepTouchMove, { passive: false });
   deepCanvas.addEventListener('touchend', onDeepTouchEnd);
@@ -902,6 +903,18 @@ function onDeepKey(e) {
   if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') deepCamera.targetY += speed;
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') deepCamera.targetX -= speed;
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') deepCamera.targetX += speed;
+  if (e.key === 'Escape') {
+    const panel = document.getElementById('deep-detail');
+    if (panel) panel.classList.add('hidden');
+  }
+}
+
+function onDeepDblClick(e) {
+  deepCamera.x = 0;
+  deepCamera.y = 0;
+  deepCamera.targetX = 0;
+  deepCamera.targetY = 0;
+  deepCamera.zoom = 1;
 }
 
 function onDeepClick(e) {
