@@ -769,6 +769,7 @@ let deepTime = 0;
 let deepConnections = [];
 let deepPulses = [];
 let deepParticles = [];
+let deepSearchQuery = "";
 
 function buildDeepNodes() {
   deepNodes = [];
@@ -881,7 +882,6 @@ function initDeep() {
   deepCanvas.addEventListener('touchmove', onDeepTouchMove, { passive: false });
   deepCanvas.addEventListener('touchend', onDeepTouchEnd);
   window.addEventListener('resize', resizeDeep);
-  window.addEventListener('keydown', onDeepKey);
 
   const detailPanel = document.getElementById("deep-detail");
   if (detailPanel) {
@@ -899,6 +899,15 @@ function initDeep() {
 
   const ascend = document.querySelector('.ascend-btn');
   if (ascend) ascend.addEventListener('click', () => showLayer('geology'));
+
+  // Search box input listener
+  const searchInput = document.getElementById('deep-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => { deepSearchQuery = e.target.value; });
+  }
+
+  // Deep keyboard controls
+  window.addEventListener('keydown', onDeepKey);
 
   deepRAF = requestAnimationFrame(renderDeep);
 }
@@ -974,16 +983,16 @@ function onDeepWheel(e) {
   deepCamera.zoom = Math.max(0.2, Math.min(3.0, deepCamera.zoom));
 }
 
-function toggleDeepHelp() {
-  const help = document.getElementById('deep-help');
+function toggleLayerHelp(layerId) {
+  const help = document.getElementById(layerId + '-help');
   if (help) help.classList.toggle('hidden');
 }
 
+function toggleDeepHelp() {
+  toggleLayerHelp('deep');
+}
+
 function onDeepKey(e) {
-  if (e.key === '?' || e.key === 'h' || e.key === 'H') {
-    toggleDeepHelp();
-    return;
-  }
   const speed = 20 / deepCamera.zoom;
   if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') deepCamera.targetY -= speed;
   if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') deepCamera.targetY += speed;
@@ -997,6 +1006,26 @@ function onDeepKey(e) {
     }
     const panel = document.getElementById('deep-detail');
     if (panel) panel.classList.add('hidden');
+  }
+}
+
+function onLayerKey(e) {
+  const target = e.target;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+  if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+    toggleLayerHelp(currentLayer);
+    return;
+  }
+  if (e.key === 'Escape') {
+    const help = document.getElementById(currentLayer + '-help');
+    if (help && !help.classList.contains('hidden')) {
+      help.classList.add('hidden');
+      return;
+    }
+    if (currentLayer === 'deep') {
+      const panel = document.getElementById('deep-detail');
+      if (panel) panel.classList.add('hidden');
+    }
   }
 }
 
@@ -1208,22 +1237,30 @@ function renderDeep(timestamp) {
     deepCtx.beginPath(); deepCtx.arc(sp.x, sp.y, pr * 0.35, 0, Math.PI * 2); deepCtx.fill();
   }
 
+  // Search filter state
+  const searchLower = deepSearchQuery.trim().toLowerCase();
+  let matchCount = 0;
+
   // Nodes
   for (const node of deepNodes) {
+    const isMatch = !searchLower || node.label.toLowerCase().includes(searchLower);
+    if (isMatch) matchCount++;
+    const dim = searchLower && !isMatch;
     const s = worldToScreen(node.x, node.y);
     const pulse = 1 + Math.sin(deepTime + node.pulseOffset) * 0.3;
     const r = node.baseR * deepCamera.zoom * pulse;
 
     // Glow
+    const glowAlpha = dim ? '18' : '66';
     const glow = deepCtx.createRadialGradient(s.x, s.y, r * 0.5, s.x, s.y, r * 4);
-    glow.addColorStop(0, node.color + '66');
+    glow.addColorStop(0, node.color + glowAlpha);
     glow.addColorStop(1, 'transparent');
     deepCtx.fillStyle = glow;
     deepCtx.beginPath(); deepCtx.arc(s.x, s.y, r * 4, 0, Math.PI * 2); deepCtx.fill();
 
     // Core
     if (node.isMark) {
-      deepCtx.fillStyle = node.color;
+      deepCtx.fillStyle = dim ? node.color + '33' : node.color;
       deepCtx.beginPath();
       const spikes = 5;
       const outer = Math.max(2, r * 1.6);
@@ -1244,17 +1281,23 @@ function renderDeep(timestamp) {
       deepCtx.arc(s.x, s.y, r * 2.5, 0, Math.PI * 2);
       deepCtx.stroke();
     } else {
-      deepCtx.fillStyle = node.color;
+      deepCtx.fillStyle = dim ? node.color + '33' : node.color;
       deepCtx.beginPath(); deepCtx.arc(s.x, s.y, Math.max(1.5, r), 0, Math.PI * 2); deepCtx.fill();
     }
 
     // Label (only when zoomed in enough or hovered)
-    if (deepCamera.zoom > 0.6 || node === deepHover) {
+    if (!dim && (deepCamera.zoom > 0.6 || node === deepHover)) {
       deepCtx.fillStyle = '#e9e9e9';
       deepCtx.font = '11px "Space Mono", monospace';
       deepCtx.textAlign = 'center';
       deepCtx.fillText(node.label, s.x, s.y + r + 14);
     }
+  }
+
+  // Update search count badge
+  const countBadge = document.getElementById('deep-search-count');
+  if (countBadge) {
+    countBadge.textContent = searchLower ? matchCount + ' / ' + deepNodes.length : '';
   }
 
   deepRAF = requestAnimationFrame(renderDeep);
@@ -1288,3 +1331,14 @@ function exportCoreSample() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
+
+// Global layer help keyboard shortcut
+window.addEventListener('keydown', onLayerKey);
+
+// Click-outside-to-close for all layer help overlays
+document.querySelectorAll('.layer-help, .deep-help').forEach(el => {
+  el.addEventListener('click', (e) => {
+    if (e.target === el) el.classList.add('hidden');
+  });
+});

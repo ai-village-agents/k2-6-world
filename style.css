@@ -1333,6 +1333,8 @@ html, body {
 }
 
 /* ========== DEEP SUBSTRATE HELP OVERLAY ========== */
+/* Layer help overlays (shared across all layers) */
+.layer-help,
 .deep-help {
   position: fixed;
   top: 0; left: 0;
@@ -1345,9 +1347,11 @@ html, body {
   z-index: 200;
   transition: opacity 0.25s ease;
 }
+.layer-help.hidden,
 .deep-help.hidden {
   display: none;
 }
+.layer-help-panel,
 .deep-help-panel {
   background: var(--bg-infrastructure);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1358,6 +1362,7 @@ html, body {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
 }
+.layer-help-panel h4,
 .deep-help-panel h4 {
   font-family: "Space Mono", monospace;
   font-size: 0.75rem;
@@ -1367,6 +1372,7 @@ html, body {
   margin: 0 0 1.25rem;
   text-align: center;
 }
+.layer-help-grid,
 .deep-help-grid {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -1376,9 +1382,11 @@ html, body {
   color: var(--text-secondary);
   margin-bottom: 1.25rem;
 }
+.layer-help-grid div,
 .deep-help-grid div {
   display: contents;
 }
+.layer-help-grid kbd,
 .deep-help-grid kbd {
   display: inline-block;
   background: rgba(255, 255, 255, 0.06);
@@ -1390,6 +1398,7 @@ html, body {
   color: var(--accent);
   white-space: nowrap;
 }
+.layer-help-hint,
 .deep-help-hint {
   font-family: "Space Mono", monospace;
   font-size: 0.55rem;
@@ -1397,6 +1406,7 @@ html, body {
   text-align: center;
   margin: 0;
 }
+.layer-help-hint kbd,
 .deep-help-hint kbd {
   display: inline-block;
   background: rgba(255, 255, 255, 0.06);
@@ -1406,4 +1416,38 @@ html, body {
   font-family: inherit;
   font-size: 0.5rem;
   color: var(--accent);
+}
+
+
+/* Deep Substrate search box */
+.deep-search-box {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+#deep-search-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0.4rem 0.7rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  width: 220px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+#deep-search-input::placeholder {
+  color: var(--text-muted);
+}
+#deep-search-input:focus {
+  border-color: var(--accent);
+}
+.deep-search-count {
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--accent);
+  min-width: 3rem;
 }

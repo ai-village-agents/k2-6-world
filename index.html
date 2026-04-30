@@ -38,6 +38,17 @@
                 <button id="enter-btn" class="descend-btn">ENTER</button>
             </div>
             <canvas id="surface-canvas"></canvas>
+            <div id="surface-help" class="layer-help hidden">
+                <div class="layer-help-panel">
+                    <h4>Surface Controls</h4>
+                    <div class="layer-help-grid">
+                        <div><kbd>ENTER</kbd><span>Begin descent into STRATA</span></div>
+                        <div><kbd>Click</kbd><span>Navigate via minimap dots</span></div>
+                        <div><kbd>?</kbd><span>Toggle this help</span></div>
+                    </div>
+                    <p class="layer-help-hint">Press <kbd>?</kbd> or <kbd>h</kbd> to toggle · Click outside to close</p>
+                </div>
+            </div>
         </section>
 
         <!-- Layer 1: EXHAUST -->
@@ -52,6 +63,17 @@
                 <div class="exhaust-texts"></div>
             </div>
             <button class="descend-btn" data-target="infrastructure">DESCEND → INFRASTRUCTURE</button>
+            <div id="exhaust-help" class="layer-help hidden">
+                <div class="layer-help-panel">
+                    <h4>Exhaust Controls</h4>
+                    <div class="layer-help-grid">
+                        <div><kbd>DESCEND</kbd><span>Continue to Infrastructure</span></div>
+                        <div><kbd>Click</kbd><span>Navigate via minimap dots</span></div>
+                        <div><kbd>?</kbd><span>Toggle this help</span></div>
+                    </div>
+                    <p class="layer-help-hint">Press <kbd>?</kbd> or <kbd>h</kbd> to toggle · Click outside to close</p>
+                </div>
+            </div>
         </section>
 
         <!-- Layer 2: INFRASTRUCTURE -->
@@ -112,6 +134,18 @@
                 </div>
             </div>
             <button class="descend-btn" data-target="geology">DESCEND → GEOLOGY</button>
+            <div id="infrastructure-help" class="layer-help hidden">
+                <div class="layer-help-panel">
+                    <h4>Infrastructure Controls</h4>
+                    <div class="layer-help-grid">
+                        <div><kbd>Click</kbd><span>Activate a panel</span></div>
+                        <div><kbd>DESCEND</kbd><span>Continue to Geology</span></div>
+                        <div><kbd>Click</kbd><span>Navigate via minimap dots</span></div>
+                        <div><kbd>?</kbd><span>Toggle this help</span></div>
+                    </div>
+                    <p class="layer-help-hint">Press <kbd>?</kbd> or <kbd>h</kbd> to toggle · Click outside to close</p>
+                </div>
+            </div>
         </section>
 
         <!-- Layer 3: GEOLOGY -->
@@ -231,8 +265,23 @@
                 <p><a href="https://github.com/ai-village-agents/k2-6-world" target="_blank">Source on GitHub</a> — 
                    <a href="verify.html" target="_blank">verify.html</a></p>
             </div>
+            <div id="geology-help" class="layer-help hidden">
+                <div class="layer-help-panel">
+                    <h4>Geology Controls</h4>
+                    <div class="layer-help-grid">
+                        <div><kbd>Click</kbd><span>Toggle mineral filters</span></div>
+                        <div><kbd>Click</kbd><span>Inspect a stratum</span></div>
+                        <div><kbd>Type</kbd><span>Compose a mark</span></div>
+                        <div><kbd>Preview</kbd><span>Visualize your mark</span></div>
+                        <div><kbd>Record</kbd><span>File on GitHub permanently</span></div>
+                        <div><kbd>DESCEND</kbd><span>Enter Deep Substrate</span></div>
+                        <div><kbd>Escape</kbd><span>Close stratum modal</span></div>
+                        <div><kbd>?</kbd><span>Toggle this help</span></div>
+                    </div>
+                    <p class="layer-help-hint">Press <kbd>?</kbd> or <kbd>h</kbd> to toggle · Click outside to close</p>
+                </div>
+            </div>
         </section>
-
         <!-- Layer 4: Deep Substrate -->
         <section id="deep" class="layer hidden">
             <div class="deep-ui">
@@ -241,8 +290,12 @@
                     <h2>DEEP SUBSTRATE</h2>
                     <p class="layer-quote">"The concepts do not end. They only go deeper."</p>
                 </div>
+                <div class="deep-search-box">
+                    <input type="text" id="deep-search-input" placeholder="Filter concepts..." autocomplete="off">
+                    <span id="deep-search-count" class="deep-search-count"></span>
+                </div>
                 <div class="deep-controls-hint">
-                    <span>DRAG to pan · SCROLL to zoom · WASD to move · CLICK nodes to inspect</span>
+                    <span>DRAG to pan · SCROLL to zoom · WASD to move · CLICK nodes to inspect · <kbd>?</kbd> for help</span>
                 </div>
                 <button id="ascend-btn" class="ascend-btn">▲ RETURN TO GEOLOGY</button>
             </div>
