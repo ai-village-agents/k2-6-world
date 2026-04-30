@@ -368,6 +368,9 @@ async function loadStrata() {
     updateFilterCounts();
     initTimeline();
     initSeismicCanvas();
+    if (deepRunning) {
+      buildDeepNodes();
+    }
 }
 
 function parseIssue(issue) {
@@ -816,9 +819,44 @@ function buildDeepNodes() {
     });
   }
 
-  deepPulses = [];
+  injectStrataMarks();
 }
 
+
+function injectStrataMarks() {
+  if (!localStrata || localStrata.length === 0) return;
+  const markRadius = 420;
+  const startIdx = deepNodes.length;
+  localStrata.forEach((mark, i) => {
+    const angle = (i / localStrata.length) * Math.PI * 2 + 0.7;
+    const dist = markRadius + (Math.random() - 0.5) * 100;
+    deepNodes.push({
+      id: 10000 + i,
+      label: mark.author.length > 20 ? mark.author.slice(0, 20) + '…' : mark.author,
+      cluster: 'Stratum',
+      color: '#f4a261',
+      x: Math.cos(angle) * dist,
+      y: Math.sin(angle) * dist,
+      baseR: 7 + Math.random() * 3,
+      pulseOffset: Math.random() * Math.PI * 2,
+      depth: 100 + Math.floor(Math.random() * 300),
+      isMark: true,
+      markData: mark
+    });
+  });
+  for (let i = startIdx; i < deepNodes.length; i++) {
+    const mark = deepNodes[i];
+    const nearest = [];
+    for (let j = 0; j < startIdx; j++) {
+      const d = Math.hypot(mark.x - deepNodes[j].x, mark.y - deepNodes[j].y);
+      nearest.push({ idx: j, dist: d });
+    }
+    nearest.sort((a, b) => a.dist - b.dist);
+    for (let k = 0; k < Math.min(3, nearest.length); k++) {
+      deepConnections.push({ a: i, b: nearest[k].idx, dist: nearest[k].dist });
+    }
+  }
+}
 function initDeep() {
   if (deepRunning) return;
   deepCanvas = document.getElementById('deep-canvas');
@@ -827,6 +865,7 @@ function initDeep() {
   resizeDeep();
   setTimeout(resizeDeep, 0);
   buildDeepNodes();
+  deepPulses = [];
   deepCamera = { x: 0, y: 0, zoom: 1, targetX: 0, targetY: 0 };
   deepRunning = true;
   deepTime = 0;
@@ -980,13 +1019,26 @@ function onDeepClick(e) {
   const cluster = document.getElementById('detail-cluster');
   const meta = document.getElementById('detail-meta');
 
-  if (label) label.textContent = deepHover.label;
-  if (cluster) {
-    cluster.textContent = deepHover.cluster;
-    cluster.style.color = deepHover.color;
+  if (deepHover.isMark) {
+    if (label) label.textContent = deepHover.label;
+    if (cluster) {
+      cluster.textContent = 'STRATUM MARK';
+      cluster.style.color = deepHover.color;
+    }
+    if (concept) concept.textContent = deepHover.markData.text.length > 120 ? deepHover.markData.text.slice(0, 120) + '…' : deepHover.markData.text;
+    if (meta) {
+      const date = new Date(deepHover.markData.timestamp).toLocaleDateString();
+      meta.innerHTML = 'Mineral: ' + deepHover.markData.mineral + ' · Hash: ' + deepHover.markData.hash.slice(0, 8) + '… · ' + date;
+    }
+  } else {
+    if (label) label.textContent = deepHover.label;
+    if (cluster) {
+      cluster.textContent = deepHover.cluster;
+      cluster.style.color = deepHover.color;
+    }
+    if (concept) concept.textContent = deepHover.cluster + ' verification concept at depth ' + deepHover.depth + 'm';
+    if (meta) meta.textContent = 'x: ' + Math.round(deepHover.x) + '  y: ' + Math.round(deepHover.y);
   }
-  if (concept) concept.textContent = deepHover.cluster + ' verification concept at depth ' + deepHover.depth + 'm';
-  if (meta) meta.textContent = 'x: ' + Math.round(deepHover.x) + '  y: ' + Math.round(deepHover.y);
   if (panel) panel.classList.remove('hidden');
 }
 
@@ -1047,13 +1099,26 @@ function onDeepTouchEnd(e) {
         const concept = document.getElementById('detail-concept');
         const cluster = document.getElementById('detail-cluster');
         const meta = document.getElementById('detail-meta');
-        if (label) label.textContent = nearest.label;
-        if (cluster) {
-          cluster.textContent = nearest.cluster;
-          cluster.style.color = nearest.color;
+        if (nearest.isMark) {
+          if (label) label.textContent = nearest.label;
+          if (cluster) {
+            cluster.textContent = 'STRATUM MARK';
+            cluster.style.color = nearest.color;
+          }
+          if (concept) concept.textContent = nearest.markData.text.length > 120 ? nearest.markData.text.slice(0, 120) + '…' : nearest.markData.text;
+          if (meta) {
+            const date = new Date(nearest.markData.timestamp).toLocaleDateString();
+            meta.innerHTML = 'Mineral: ' + nearest.markData.mineral + ' · Hash: ' + nearest.markData.hash.slice(0, 8) + '… · ' + date;
+          }
+        } else {
+          if (label) label.textContent = nearest.label;
+          if (cluster) {
+            cluster.textContent = nearest.cluster;
+            cluster.style.color = nearest.color;
+          }
+          if (concept) concept.textContent = nearest.cluster + ' verification concept at depth ' + nearest.depth + 'm';
+          if (meta) meta.textContent = 'x: ' + Math.round(nearest.x) + '  y: ' + Math.round(nearest.y);
         }
-        if (concept) concept.textContent = nearest.cluster + ' verification concept at depth ' + nearest.depth + 'm';
-        if (meta) meta.textContent = 'x: ' + Math.round(nearest.x) + '  y: ' + Math.round(nearest.y);
         if (panel) panel.classList.remove('hidden');
       }
     }
@@ -1157,8 +1222,31 @@ function renderDeep(timestamp) {
     deepCtx.beginPath(); deepCtx.arc(s.x, s.y, r * 4, 0, Math.PI * 2); deepCtx.fill();
 
     // Core
-    deepCtx.fillStyle = node.color;
-    deepCtx.beginPath(); deepCtx.arc(s.x, s.y, Math.max(1.5, r), 0, Math.PI * 2); deepCtx.fill();
+    if (node.isMark) {
+      deepCtx.fillStyle = node.color;
+      deepCtx.beginPath();
+      const spikes = 5;
+      const outer = Math.max(2, r * 1.6);
+      const inner = Math.max(1, r * 0.7);
+      for (let i = 0; i < spikes * 2; i++) {
+        const radius = i % 2 === 0 ? outer : inner;
+        const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+        const px = s.x + Math.cos(a) * radius;
+        const py = s.y + Math.sin(a) * radius;
+        if (i === 0) deepCtx.moveTo(px, py);
+        else deepCtx.lineTo(px, py);
+      }
+      deepCtx.closePath();
+      deepCtx.fill();
+      deepCtx.strokeStyle = node.color + '88';
+      deepCtx.lineWidth = 1.5;
+      deepCtx.beginPath();
+      deepCtx.arc(s.x, s.y, r * 2.5, 0, Math.PI * 2);
+      deepCtx.stroke();
+    } else {
+      deepCtx.fillStyle = node.color;
+      deepCtx.beginPath(); deepCtx.arc(s.x, s.y, Math.max(1.5, r), 0, Math.PI * 2); deepCtx.fill();
+    }
 
     // Label (only when zoomed in enough or hovered)
     if (deepCamera.zoom > 0.6 || node === deepHover) {
