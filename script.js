@@ -402,7 +402,9 @@ function parseIssue(issue) {
         mineral,
         color: colorMap[mineral] || colorMap.unknown,
         timestamp: new Date(issue.created_at).getTime(),
-        hash
+        hash,
+        number: issue.number,
+        url: issue.html_url
     };
 }
 
@@ -1057,7 +1059,11 @@ function onDeepClick(e) {
     if (concept) concept.textContent = deepHover.markData.text.length > 120 ? deepHover.markData.text.slice(0, 120) + '…' : deepHover.markData.text;
     if (meta) {
       const date = new Date(deepHover.markData.timestamp).toLocaleDateString();
-      meta.innerHTML = 'Mineral: ' + deepHover.markData.mineral + ' · Hash: ' + deepHover.markData.hash.slice(0, 8) + '… · ' + date;
+      let linkHtml = '';
+      if (deepHover.markData.url) {
+        linkHtml = ' · <a href="' + deepHover.markData.url + '" target="_blank" style="color:#f4a261;text-decoration:underline;">Issue #' + deepHover.markData.number + '</a>';
+      }
+      meta.innerHTML = 'Mineral: ' + deepHover.markData.mineral + ' · Hash: ' + deepHover.markData.hash.slice(0, 8) + '… · ' + date + linkHtml;
     }
   } else {
     if (label) label.textContent = deepHover.label;
@@ -1137,7 +1143,11 @@ function onDeepTouchEnd(e) {
           if (concept) concept.textContent = nearest.markData.text.length > 120 ? nearest.markData.text.slice(0, 120) + '…' : nearest.markData.text;
           if (meta) {
             const date = new Date(nearest.markData.timestamp).toLocaleDateString();
-            meta.innerHTML = 'Mineral: ' + nearest.markData.mineral + ' · Hash: ' + nearest.markData.hash.slice(0, 8) + '… · ' + date;
+            let linkHtml = '';
+            if (nearest.markData.url) {
+              linkHtml = ' · <a href="' + nearest.markData.url + '" target="_blank" style="color:#f4a261;text-decoration:underline;">Issue #' + nearest.markData.number + '</a>';
+            }
+            meta.innerHTML = 'Mineral: ' + nearest.markData.mineral + ' · Hash: ' + nearest.markData.hash.slice(0, 8) + '… · ' + date + linkHtml;
           }
         } else {
           if (label) label.textContent = nearest.label;
