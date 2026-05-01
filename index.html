@@ -302,6 +302,11 @@
                     <input type="text" id="deep-search-input" placeholder="Filter concepts..." autocomplete="off">
                     <span id="deep-search-count" class="deep-search-count"></span>
                 </div>
+                <div class="deep-mark-nav" id="deep-mark-nav" style="display:none;">
+                    <button class="mark-nav-btn" id="mark-prev" aria-label="Previous mark">&#9664;</button>
+                    <span class="mark-nav-count" id="mark-nav-count"></span>
+                    <button class="mark-nav-btn" id="mark-next" aria-label="Next mark">&#9654;</button>
+                </div>
                 <div class="deep-controls-hint">
                     <span>DRAG to pan · SCROLL to zoom · WASD to move · CLICK nodes to inspect · <kbd>?</kbd> for help</span>
                 </div>
@@ -332,6 +337,7 @@
                         <div><kbd>Click</kbd><span>Inspect node</span></div>
                         <div><kbd>DBL Click</kbd><span>Reset camera</span></div>
                         <div><kbd>Escape</kbd><span>Close panel</span></div>
+                        <div><kbd>M</kbd><span>Focus next mark</span></div>
                         <div><kbd>?</kbd><span>Toggle this help</span></div>
                     </div>
                     <p class="deep-help-hint">Press <kbd>?</kbd> or <kbd>h</kbd> to toggle · Click outside to close</p>

@@ -764,7 +764,7 @@ const CLUSTERS = [
   ]}
 ];
 
-let deepCanvas, deepCtx, deepCamera, deepNodes = [], deepHover = null, deepRAF, deepRunning = false;
+let deepCanvas, deepCtx, deepCamera, deepNodes = [], deepMarkNodes = [], deepHover = null, deepRAF, deepRunning = false, currentMarkIndex = 0, deepActiveMark = null;
 let deepDrag = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
 let deepTouch = { active: false, pts: [] };
 let deepTime = 0;
@@ -1000,6 +1000,11 @@ function onDeepKey(e) {
   if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') deepCamera.targetY += speed;
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') deepCamera.targetX -= speed;
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') deepCamera.targetX += speed;
+  if (e.key === 'm' || e.key === 'M') {
+    e.preventDefault();
+    focusMark(currentMarkIndex + 1);
+    return;
+  }
   if (e.key === 'Escape') {
     const help = document.getElementById('deep-help');
     if (help && !help.classList.contains('hidden')) {
@@ -1051,6 +1056,7 @@ function onDeepClick(e) {
   const meta = document.getElementById('detail-meta');
 
   if (deepHover.isMark) {
+    deepActiveMark = { node: deepHover, until: Date.now() + 4000 };
     if (label) label.textContent = deepHover.label;
     if (cluster) {
       cluster.textContent = 'STRATUM MARK';
@@ -1290,6 +1296,16 @@ function renderDeep(timestamp) {
       deepCtx.beginPath();
       deepCtx.arc(s.x, s.y, r * 2.5, 0, Math.PI * 2);
       deepCtx.stroke();
+      // Active mark highlight ring
+      if (deepActiveMark && deepActiveMark.node === node && Date.now() < deepActiveMark.until) {
+        const progress = (Date.now() - (deepActiveMark.until - 4000)) / 4000;
+        const ringR = Math.max(4, r * 3.5 + Math.sin(progress * Math.PI * 4) * 6 * deepCamera.zoom);
+        deepCtx.strokeStyle = node.color + 'aa';
+        deepCtx.lineWidth = 1.5;
+        deepCtx.beginPath();
+        deepCtx.arc(s.x, s.y, ringR, 0, Math.PI * 2);
+        deepCtx.stroke();
+      }
     } else {
       deepCtx.fillStyle = dim ? node.color + '33' : node.color;
       deepCtx.beginPath(); deepCtx.arc(s.x, s.y, Math.max(1.5, r), 0, Math.PI * 2); deepCtx.fill();
@@ -1313,6 +1329,32 @@ function renderDeep(timestamp) {
   deepRAF = requestAnimationFrame(renderDeep);
 }
 
+
+
+function updateMarkNav() {
+  const nav = document.getElementById('deep-mark-nav');
+  const count = document.getElementById('mark-nav-count');
+  if (!nav || !count) return;
+  if (deepMarkNodes.length > 0) {
+    nav.style.display = '';
+    count.textContent = 'Mark ' + (currentMarkIndex + 1) + ' / ' + deepMarkNodes.length;
+  } else {
+    nav.style.display = 'none';
+  }
+}
+
+function focusMark(index) {
+  if (!deepMarkNodes.length) return;
+  currentMarkIndex = ((index % deepMarkNodes.length) + deepMarkNodes.length) % deepMarkNodes.length;
+  const mark = deepMarkNodes[currentMarkIndex];
+  deepCamera.targetX = mark.x;
+  deepCamera.targetY = mark.y;
+  deepCamera.zoom = 1.5;
+  deepHover = mark;
+  deepActiveMark = { node: mark, until: Date.now() + 4000 };
+  onDeepClick();
+  updateMarkNav();
+}
 
 function exportCoreSample() {
     const payload = {
