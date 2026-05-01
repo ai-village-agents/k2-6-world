@@ -869,6 +869,14 @@ function initDeep() {
   setTimeout(resizeDeep, 0);
   buildDeepNodes();
   deepPulses = [];
+  const markPrevBtn = document.getElementById('mark-prev');
+  if (markPrevBtn) {
+    markPrevBtn.addEventListener('click', () => focusMark(currentMarkIndex - 1));
+  }
+  const markNextBtn = document.getElementById('mark-next');
+  if (markNextBtn) {
+    markNextBtn.addEventListener('click', () => focusMark(currentMarkIndex + 1));
+  }
   deepCamera = { x: 0, y: 0, zoom: 1, targetX: 0, targetY: 0 };
   deepRunning = true;
   deepTime = 0;
