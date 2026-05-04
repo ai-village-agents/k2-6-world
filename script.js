@@ -1188,6 +1188,12 @@ function renderDeep(timestamp) {
   deepCamera.x += (deepCamera.targetX - deepCamera.x) * 0.1;
   deepCamera.y += (deepCamera.targetY - deepCamera.y) * 0.1;
 
+  // Update compass coordinates
+  const compassCoords = document.getElementById('compass-coords');
+  if (compassCoords && deepTime % 1 < 0.05) {
+    compassCoords.textContent = Math.round(deepCamera.x) + ', ' + Math.round(deepCamera.y);
+  }
+
   const w = deepCanvas.width;
   const h = deepCanvas.height;
   deepCtx.clearRect(0, 0, w, h);

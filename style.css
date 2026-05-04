@@ -1214,6 +1214,32 @@ html, body {
   z-index: 10;
   pointer-events: none;
 }
+.deep-compass {
+  position: absolute;
+  bottom: 2.8rem;
+  left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 11;
+  pointer-events: none;
+  user-select: none;
+}
+.compass-svg {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+.compass-coords {
+  font-family: "Space Mono", monospace;
+  font-size: 0.55rem;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+  min-width: 3rem;
+  text-align: center;
+}
+
 @media (max-width: 640px) {
   .deep-controls-hint { display: none; }
   .deep-detail {
